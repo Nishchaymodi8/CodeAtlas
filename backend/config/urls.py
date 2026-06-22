@@ -30,4 +30,8 @@ urlpatterns = [
         "api/auth/",
         include("accounts.urls")
     ),
+    path(
+    "api/github/",
+    include("github_integration.urls")
+),
 ]
