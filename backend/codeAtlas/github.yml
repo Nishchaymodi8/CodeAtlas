@@ -1,0 +1,18 @@
+info:
+  name: github
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: http://127.0.0.1:8000/api/github/connect/
+  headers:
+    - name: Authorization
+      value: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzgzNjE0NTkyLCJpYXQiOjE3ODM2MTQyOTIsImp0aSI6IjU5ZmFkODNjYzBhNjRkNDQ5NzY1MDIwZWJjM2VkOWFiIiwidXNlcl9pZCI6IjMifQ.JA6la9eitJu4V4eq98ZD8imtwQpJ8-MdvnvhBQpSY9g
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
