@@ -1,0 +1,18 @@
+info:
+  name: repo
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: http://127.0.0.1:8002/api/github/repositories/
+  headers:
+    - name: Authorization
+      value: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzgzNzc4NTI2LCJpYXQiOjE3ODM3NzgyMjYsImp0aSI6ImM2YWI3MjhlYjFhMzRlZjNiZTEzODA2YjU0NDE5NmMyIiwidXNlcl9pZCI6IjMifQ.yvtJuL8-cv7CGZZqOqq36S0kDdfwcRAhaXp-YycoNvM
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

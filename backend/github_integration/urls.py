@@ -10,4 +10,8 @@ urlpatterns = [
         "callback/",
         GitHubCallbackView.as_view()
     ),
+    path(
+    "repositories/",
+    GitHubRepositoriesView.as_view(),
+),
 ]

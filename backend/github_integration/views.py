@@ -81,3 +81,37 @@ class GitHubCallbackView(APIView):
                 "message": "GitHub connected successfully",
                 "github_username": github_user["login"]
             })
+
+
+class GitHubRepositoriesView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+
+        github_account = GitHubAccount.objects.get(
+            user=request.user
+        )
+
+        response = requests.get(
+            "https://api.github.com/user/repos",
+            headers={
+                "Authorization": f"Bearer {github_account.access_token}"
+            }
+        )
+
+        repositories = []
+
+        for repo in response.json():
+
+            repositories.append({
+                "id": repo["id"],
+                "name": repo["name"],
+                "full_name": repo["full_name"],
+                "private": repo["private"],
+                "language": repo["language"],
+                "default_branch": repo["default_branch"],
+                "html_url": repo["html_url"],
+            })
+
+        return Response(repositories)

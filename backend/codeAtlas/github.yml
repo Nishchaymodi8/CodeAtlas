@@ -5,10 +5,10 @@ info:
 
 http:
   method: GET
-  url: http://127.0.0.1:8000/api/github/connect/
+  url: http://127.0.0.1:8002/api/github/connect/
   headers:
     - name: Authorization
-      value: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzgzNjE0NTkyLCJpYXQiOjE3ODM2MTQyOTIsImp0aSI6IjU5ZmFkODNjYzBhNjRkNDQ5NzY1MDIwZWJjM2VkOWFiIiwidXNlcl9pZCI6IjMifQ.JA6la9eitJu4V4eq98ZD8imtwQpJ8-MdvnvhBQpSY9g
+      value: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzgzNzc2NTg3LCJpYXQiOjE3ODM3NzYyODcsImp0aSI6IjM5MGUxYzY0YmExNTQ1NzlhMWMxMDc1YmM1Y2VkMjdjIiwidXNlcl9pZCI6IjMifQ.uc6maB8jL4yd2gLoKHWYc3L7U6MbD2aI0NdMvYnnK5M
   auth: inherit
 
 settings:
@@ -16,3 +16,4 @@ settings:
   timeout: 0
   followRedirects: true
   maxRedirects: 5
+​

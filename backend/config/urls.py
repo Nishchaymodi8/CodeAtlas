@@ -34,4 +34,5 @@ urlpatterns = [
     "api/github/",
     include("github_integration.urls")
 ),
+path("api/repositories/", include("repositories.urls")),
 ]
