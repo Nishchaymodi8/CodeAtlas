@@ -115,3 +115,29 @@ class GitHubRepositoriesView(APIView):
             })
 
         return Response(repositories)
+    
+class GitHubStatusView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        print(request.headers.get("Authorization"))
+
+        try:
+
+            github = GitHubAccount.objects.get(
+                user=request.user
+            )
+            
+
+            return Response({
+                "connected": True,
+                "username": github.username
+            })
+        
+
+        except GitHubAccount.DoesNotExist:
+
+            return Response({
+                "connected": False
+            })

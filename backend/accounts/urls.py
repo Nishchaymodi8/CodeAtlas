@@ -13,9 +13,9 @@ urlpatterns = [
     ),
 
     path(
-        "login/",
-        TokenObtainPairView.as_view()
-    ),
+    "login/",
+    LoginView.as_view()
+),
 
     path(
         "refresh/",

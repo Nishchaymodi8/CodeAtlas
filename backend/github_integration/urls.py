@@ -14,4 +14,8 @@ urlpatterns = [
     "repositories/",
     GitHubRepositoriesView.as_view(),
 ),
+path(
+    "status/",
+    GitHubStatusView.as_view(),
+),
 ]
