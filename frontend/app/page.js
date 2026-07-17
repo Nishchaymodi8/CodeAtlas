@@ -1,9 +1,5 @@
-import LoginForm from "@/components/LoginForm";
+import { redirect } from "next/navigation";
 
 export default function Home() {
-  return (
-    <main className="min-h-screen flex items-center justify-center">
-      <LoginForm />
-    </main>
-  );
+  redirect("/login");
 }
