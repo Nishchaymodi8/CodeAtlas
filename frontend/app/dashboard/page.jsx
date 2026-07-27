@@ -1,4 +1,7 @@
 "use client";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { getAccessToken } from "@/lib/auth";
 
 import AppShell from "@/components/layout/AppShell";
 import { GlassCard, GlassPanel } from "@/components/ui/GlassCard";
@@ -62,6 +65,42 @@ const repos = [
 ];
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    async function loadUser() {
+      const token = getAccessToken();
+
+      if (!token) {
+        router.replace("/login");
+        return;
+      }
+
+      try {
+        const response = await fetch("http://127.0.0.1:8001/api/me/", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.status === 401) {
+          localStorage.removeItem("access");
+          localStorage.removeItem("refresh");
+          router.replace("/login");
+          return;
+        }
+
+        const data = await response.json();
+        setUser(data);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    loadUser();
+  }, [router]);
+
   return (
     <AppShell>
       <div className="space-y-6">

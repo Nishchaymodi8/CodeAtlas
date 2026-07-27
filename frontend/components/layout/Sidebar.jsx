@@ -69,7 +69,7 @@ export default function Sidebar() {
               className={`flex h-11 w-11 items-center justify-center rounded-2xl border transition-all
                 ${
                   active
-                    ? "border-[#57FF8A]/30 bg-[#57FF8A]/12 text-[#57FF8A] shadow-[0_0_35px_rgba(87,255,138,0.55)]"
+                    ? "border-[#66FC73]/30 bg-[#66FC73]/12 text-[#66FC73] shadow-[0_0_35px_rgba(87,255,138,0.55)]"
                     : "border-white/10 bg-white/[0.03] text-gray-400 hover:bg-white/[0.06] hover:text-white"
                 }`}
             >

@@ -1,4 +1,4 @@
-import api from "./api";
+import api from "@/lib/api";
 export const githubStatus = async () => {
   const token = localStorage.getItem("access");
   console.log("TOKEN:", token);

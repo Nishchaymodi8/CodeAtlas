@@ -47,3 +47,25 @@ class ImportRepositoryView(APIView):
             "message": "Repository imported successfully",
             "repository": repository.full_name
         })
+class RepositoryListView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+
+        repositories = Repository.objects.filter(
+            user=request.user
+        )
+
+        data = []
+
+        for repo in repositories:
+            data.append({
+                "github_repo_id": repo.github_repo_id,
+                "name": repo.name,
+                "full_name": repo.full_name,
+                "language": repo.language,
+                "private": repo.private,
+            })
+
+        return Response(data)

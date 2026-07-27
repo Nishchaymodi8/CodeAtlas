@@ -14,6 +14,8 @@ class GitHubConnectView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        print("USER:", request.user)
+        print("AUTH:", request.auth)
 
         OAuthState.objects.filter(user=request.user).delete()
 
@@ -112,6 +114,8 @@ class GitHubRepositoriesView(APIView):
                 "language": repo["language"],
                 "default_branch": repo["default_branch"],
                 "html_url": repo["html_url"],
+                "description": repo["description"],
+"owner": repo["owner"]["login"],
             })
 
         return Response(repositories)
