@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import API_BASE_URL from "@/lib/api";
+import api from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,6 +13,7 @@ export default function LoginPage() {
   });
 
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleChange = (e) => {
     setForm({
@@ -21,82 +22,70 @@ export default function LoginPage() {
     });
   };
 
-  const loginUser = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!form.username || !form.password) {
-      alert("Please fill all fields.");
-      return;
-    }
-
     setLoading(true);
+    setError("");
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/login/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username: form.username,
-          password: form.password,
-        }),
-      });
+      const response = await api.post("/auth/login/", form);
 
-      const data = await response.json();
+      localStorage.setItem("access", response.data.access);
+      localStorage.setItem("refresh", response.data.refresh);
 
-      if (response.ok) {
-        localStorage.setItem("access", data.access);
-        localStorage.setItem("refresh", data.refresh);
+      alert("Login Successful!");
 
-        router.push("/dashboard");
+      router.push("/dashboard");
+    } catch (err) {
+      if (err.response) {
+        setError(err.response.data.error);
       } else {
-        alert(data.error || "Invalid username or password.");
+        setError("Something went wrong.");
       }
-    } catch (error) {
-      console.error(error);
-      alert("Unable to connect to server.");
-    } finally {
-      setLoading(false);
     }
+
+    setLoading(false);
   };
 
   return (
-    <main className="min-h-screen bg-[#050505] flex items-center justify-center">
-      <div className="w-[450px] rounded-[35px] border border-white/10 bg-white/5 backdrop-blur-2xl p-10">
-        <h1 className="text-4xl font-bold text-white text-center">
-          Code<span className="text-green-400">Atlas</span>
-        </h1>
+    <div className="flex items-center justify-center min-h-screen">
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-md p-6 border rounded-lg shadow"
+      >
+        <h1 className="text-3xl font-bold mb-6">Login</h1>
 
-        <p className="text-center text-gray-400 mt-2">Welcome Back</p>
+        <input
+          type="text"
+          name="username"
+          placeholder="Username"
+          value={form.username}
+          onChange={handleChange}
+          className="w-full border p-3 mb-4"
+          required
+        />
 
-        <form onSubmit={loginUser} className="mt-10 space-y-5">
-          <input
-            name="username"
-            placeholder="Username"
-            value={form.username}
-            onChange={handleChange}
-            className="w-full rounded-full bg-white/5 border border-white/10 px-5 py-4 text-white outline-none"
-          />
+        <input
+          type="password"
+          name="password"
+          placeholder="Password"
+          value={form.password}
+          onChange={handleChange}
+          className="w-full border p-3 mb-4"
+          required
+        />
 
-          <input
-            name="password"
-            type="password"
-            placeholder="Password"
-            value={form.password}
-            onChange={handleChange}
-            className="w-full rounded-full bg-white/5 border border-white/10 px-5 py-4 text-white outline-none"
-          />
+        {error && <p className="text-red-500 mb-4">{error}</p>}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-full bg-green-400 text-black font-semibold py-4 disabled:opacity-50"
-          >
-            {loading ? "Logging in..." : "Login"}
-          </button>
-        </form>
-      </div>
-    </main>
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-black text-white py-3 rounded"
+        >
+          {loading ? "Logging in..." : "Login"}
+        </button>
+      </form>
+    </div>
   );
 }

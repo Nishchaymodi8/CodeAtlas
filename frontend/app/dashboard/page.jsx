@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getAccessToken } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
 
 import AppShell from "@/components/layout/AppShell";
 import { GlassCard, GlassPanel } from "@/components/ui/GlassCard";
@@ -70,7 +70,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function loadUser() {
-      const token = getAccessToken();
+      const token = localStorage.getItem("access");
 
       if (!token) {
         router.replace("/login");
@@ -78,23 +78,12 @@ export default function DashboardPage() {
       }
 
       try {
-        const response = await fetch("http://127.0.0.1:8001/api/me/", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (response.status === 401) {
-          localStorage.removeItem("access");
-          localStorage.removeItem("refresh");
-          router.replace("/login");
-          return;
-        }
-
-        const data = await response.json();
+        const data = await getCurrentUser();
         setUser(data);
       } catch (error) {
-        console.error(error);
+        localStorage.removeItem("access");
+        localStorage.removeItem("refresh");
+        router.replace("/login");
       }
     }
 

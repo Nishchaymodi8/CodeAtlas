@@ -4,7 +4,7 @@ from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-
+from rest_framework.permissions import AllowAny
 import requests
 
 from .models import GitHubAccount,OAuthState
@@ -121,27 +121,18 @@ class GitHubRepositoriesView(APIView):
         return Response(repositories)
     
 class GitHubStatusView(APIView):
-
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get(self, request):
-        print(request.headers.get("Authorization"))
+        print("================================")
+        print("USER:", request.user)
+        print("AUTH:", request.auth)
+        print("HEADERS:", request.headers.get("Authorization"))
+        print("================================")
 
-        try:
+        return Response({
+            "user": str(request.user),
+            "authenticated": request.user.is_authenticated,
+        })
 
-            github = GitHubAccount.objects.get(
-                user=request.user
-            )
-            
-
-            return Response({
-                "connected": True,
-                "username": github.username
-            })
-        
-
-        except GitHubAccount.DoesNotExist:
-
-            return Response({
-                "connected": False
-            })
+  
