@@ -5,44 +5,36 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.permissions import AllowAny
+from django.shortcuts import get_object_or_404
+from django.shortcuts import redirect
 import requests
 
 from .models import GitHubAccount,OAuthState
 
 class GitHubConnectView(APIView):
-
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        print("=" * 50)
         print("USER:", request.user)
         print("AUTH:", request.auth)
+        print("HEADER:", request.headers.get("Authorization"))
+        print("=" * 50)
 
-        OAuthState.objects.filter(user=request.user).delete()
-
-        oauth_state = OAuthState.objects.create(
-            user=request.user
-        )
-
-        github_url = (
-            "https://github.com/login/oauth/authorize"
-            f"?client_id={settings.GITHUB_CLIENT_ID}"
-            f"&state={oauth_state.state}"
-        )
-
-        return Response({
-            "url": github_url
-        })
+        return Response({"ok": True})
     
 class GitHubCallbackView(APIView):
+    permission_classes = [AllowAny]
 
     def get(self, request):
 
         code = request.GET.get("code")
         state = request.GET.get("state")
 
-        oauth_state = OAuthState.objects.get(
-        state=state
-        )
+        oauth_state = get_object_or_404(
+    OAuthState,
+    state=state
+)
 
         user = oauth_state.user
 
@@ -60,6 +52,11 @@ class GitHubCallbackView(APIView):
         token_data = token_response.json()
 
         access_token = token_data.get("access_token")
+        if not access_token:
+         return Response(
+        {"error": "GitHub OAuth failed"},
+        status=400
+    )
         user_response = requests.get(
                "https://api.github.com/user",
                headers={
@@ -79,10 +76,7 @@ class GitHubCallbackView(APIView):
         )
         oauth_state.delete()
 
-        return Response({
-                "message": "GitHub connected successfully",
-                "github_username": github_user["login"]
-            })
+        return redirect("http://localhost:3000/dashboard?github=connected")
 
 
 class GitHubRepositoriesView(APIView):

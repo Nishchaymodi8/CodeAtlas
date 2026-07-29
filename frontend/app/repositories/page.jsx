@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import AppShell from "@/components/layout/AppShell";
 import RepositoryCard from "@/components/repositories/RepositoryCard";
-import { githubStatus, connectGithub } from "@/services/github";
+
+import { connectGitHub } from "@/lib/github";
 import {
   getGithubRepositories,
   getImportedRepositories,
@@ -66,7 +67,7 @@ export default function RepositoriesPage() {
 
           {!connected && (
             <button
-              onClick={handleGithubConnect}
+              onClick={connectGitHub}
               className="rounded-full px-8 py-4 bg-[#57FF8A] text-black font-semibold shadow-[0_0_40px_rgba(87,255,138,.45)] hover:scale-105 transition"
             >
               + Connect GitHub
