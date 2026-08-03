@@ -33,6 +33,11 @@ class Repository(models.Model):
     html_url = models.URLField()
 
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    local_path = models.TextField(
+    blank=True,
+    null=True
+    )
 
     def __str__(self):
         return self.full_name

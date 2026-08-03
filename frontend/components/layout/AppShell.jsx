@@ -31,7 +31,7 @@ export default function AppShell({ children, right }) {
             width: "950px",
             height: "650px",
             background: "#66FC73",
-            opacity: 0.55,
+            opacity: 0.35,
             filter: "blur(220px)",
           }}
         />

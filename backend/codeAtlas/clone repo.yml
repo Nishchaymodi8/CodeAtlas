@@ -1,0 +1,15 @@
+info:
+  name: clone repo
+  type: http
+  seq: 5
+
+http:
+  method: POST
+  url: http://127.0.0.1:8001/api/repositories/canvascart/clone/
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

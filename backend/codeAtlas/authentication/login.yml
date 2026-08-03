@@ -5,13 +5,14 @@ info:
 
 http:
   method: POST
-  url: http://127.0.0.1:8002/api/auth/login/
+  url: http://127.0.0.1:8001/api/auth/login/
   body:
     type: json
     data: |-
       {
-          "username": "nishchay",
-          "password": "nishchay"
+          "username": "usern",
+          "password": "usern
+        "
       }
   auth: inherit
 

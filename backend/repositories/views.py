@@ -1,24 +1,31 @@
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-
+from django.shortcuts import get_object_or_404
 import requests
 
 from github_integration.models import GitHubAccount
 from .models import Repository
-
+import os
+from git import Repo
 
 class ImportRepositoryView(APIView):
+    
 
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        print("===== IMPORT VIEW HIT =====")
 
+        
         repo_name = request.data.get("repo_name")
-
+        print("Repo Name:", repo_name)
+        
         github_account = GitHubAccount.objects.get(
             user=request.user
         )
+        print("Username:", github_account.username)
+               
 
         response = requests.get(
             f"https://api.github.com/repos/{github_account.username}/{repo_name}",
@@ -26,27 +33,56 @@ class ImportRepositoryView(APIView):
                 "Authorization": f"Bearer {github_account.access_token}"
             }
         )
+        print("STATUS:", response.status_code)
+        print("URL:", response.url)
+        print("BODY:", response.text)
+        print("GitHub Username:", github_account.username)
+        print("Repo Name:", repo_name)
+        print("Access Token:", github_account.access_token[:10], "...")
+        if response.status_code != 200:
+            return Response(
+                {
+                    "error": "Failed to fetch repository from GitHub",
+                    "github_status": response.status_code,
+                    "github_response": response.text,
+                },
+                status=response.status_code,
+            )
 
         repo = response.json()
 
-        repository, created = Repository.objects.update_or_create(
-            github_repo_id=repo["id"],
-            defaults={
-                "user": request.user,
-                "name": repo["name"],
-                "full_name": repo["full_name"],
-                "description": repo["description"],
-                "language": repo["language"],
-                "default_branch": repo["default_branch"],
-                "private": repo["private"],
-                "html_url": repo["html_url"],
+        try:
+            repository, created = Repository.objects.update_or_create(
+                github_repo_id=repo["id"],
+                defaults={
+                    "user": request.user,
+                    "name": repo["name"],
+                    "full_name": repo["full_name"],
+                    "description": repo["description"],
+                    "language": repo["language"],
+                    "default_branch": repo["default_branch"],
+                    "private": repo["private"],
+                    "html_url": repo["html_url"],
+                },
+            )
+
+            print("Repository saved successfully!")
+
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+
+            return Response(
+                {"error": str(e)},
+                status=500,
+            )
+
+        return Response(
+            {
+                "message": "Repository imported successfully",
+                "repository": repository.full_name,
             }
         )
-
-        return Response({
-            "message": "Repository imported successfully",
-            "repository": repository.full_name
-        })
 class RepositoryListView(APIView):
 
     permission_classes = [IsAuthenticated]
@@ -69,3 +105,139 @@ class RepositoryListView(APIView):
             })
 
         return Response(data)
+
+class RepositoryDetailView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, repo_name):
+
+        repository = get_object_or_404(
+            Repository,
+            user=request.user,
+            name=repo_name
+        )
+
+        return Response({
+            "github_repo_id": repository.github_repo_id,
+            "name": repository.name,
+            "full_name": repository.full_name,
+            "description": repository.description,
+            "language": repository.language,
+            "default_branch": repository.default_branch,
+            "private": repository.private,
+            "html_url": repository.html_url,
+    "local_path": repository.local_path,
+        })
+
+class CloneRepositoryView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, repo_name):
+
+        repository = get_object_or_404(
+            Repository,
+            user=request.user,
+            name=repo_name
+        )
+
+        clone_path = os.path.join(
+            "C:\\CODEATLAS_STORAGE",
+            repository.name
+        )
+
+        if os.path.exists(clone_path):
+            repository.local_path = clone_path
+            repository.save()
+
+            return Response({
+                "message": "Repository already cloned.",
+                "local_path": clone_path
+            })
+
+        Repo.clone_from(
+            repository.html_url,
+            clone_path
+        )
+
+        repository.local_path = clone_path
+        repository.save()
+
+        return Response({
+            "message": "Repository cloned successfully.",
+            "local_path": clone_path
+        })
+
+
+class RepositoryFilesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, repo_name):
+        repo = Repository.objects.get(
+            user=request.user,
+            name=repo_name
+        )
+
+        if not repo.local_path:
+            return Response(
+                {"error": "Repository not cloned"},
+                status=400
+            )
+
+        items = []
+
+        for item in os.listdir(repo.local_path):
+            full_path = os.path.join(repo.local_path, item)
+
+            items.append({
+                "name": item,
+                "type": "directory" if os.path.isdir(full_path) else "file",
+            })
+
+        return Response(items)
+
+class RepositoryFileContentView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, repo_name):
+        repo = Repository.objects.get(
+            user=request.user,
+            name=repo_name
+        )
+
+        path = request.GET.get("path")
+
+        if not path:
+            return Response(
+                {"error": "Path is required"},
+                status=400
+            )
+
+        full_path = os.path.join(repo.local_path, path)
+
+        if not os.path.exists(full_path):
+            return Response(
+                {"error": "File not found"},
+                status=404
+            )
+
+        if os.path.isdir(full_path):
+            return Response(
+                {"error": "Cannot open a directory"},
+                status=400
+            )
+
+        try:
+            with open(full_path, "r", encoding="utf-8") as f:
+                content = f.read()
+
+            return Response({
+                "path": path,
+                "content": content
+            })
+
+        except UnicodeDecodeError:
+            return Response({
+                "error": "Binary file"
+            }, status=400)

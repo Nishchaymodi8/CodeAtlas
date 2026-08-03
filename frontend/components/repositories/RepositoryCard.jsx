@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import { Globe, Lock, GitBranch, Download } from "lucide-react";
 import { importRepository } from "@/services/repositoryService";
 import { useState } from "react";
+import { useEffect } from "react";
 
 const languageColors = {
   JavaScript: "#f1e05a",
@@ -17,10 +18,14 @@ const languageColors = {
   Rust: "#dea584",
 };
 
-export default function RepositoryCard({ repo }) {
+export default function RepositoryCard({ repo, imported }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [isImported, setIsImported] = useState(imported);
+  const [isImported, setIsImported] = useState(imported ?? false);
+
+  useEffect(() => {
+    setIsImported(imported);
+  }, [imported]);
 
   async function handleImport() {
     try {
@@ -117,17 +122,19 @@ export default function RepositoryCard({ repo }) {
 
         {isImported ? (
           <button
-            disabled
+            onClick={() => router.push(`/repositories/${repo.name}`)}
             className="
-              rounded-full
-              px-6
-              py-3
-              bg-[#57FF8A]
-              text-black
-              font-semibold
-            "
+      rounded-full
+      px-6
+      py-3
+      bg-[#57FF8A]
+      text-black
+      font-semibold
+      hover:scale-105
+      transition
+    "
           >
-            Imported ✓
+            Open Repository
           </button>
         ) : (
           <button

@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import AppShell from "@/components/layout/AppShell";
 import RepositoryCard from "@/components/repositories/RepositoryCard";
+import { connectGitHub, githubStatus } from "@/lib/github";
 
-import { connectGitHub } from "@/lib/github";
 import {
   getGithubRepositories,
   getImportedRepositories,
@@ -15,6 +15,7 @@ export default function RepositoriesPage() {
   const [connected, setConnected] = useState(false);
   const [repositories, setRepositories] = useState([]);
   const [search, setSearch] = useState("");
+  const [files, setFiles] = useState([]);
   const [importedRepos, setImportedRepos] = useState([]);
 
   useEffect(() => {
@@ -38,19 +39,17 @@ export default function RepositoriesPage() {
       console.error(err);
     }
   }
-  async function handleGithubConnect() {
-    try {
-      const data = await connectGithub();
-      window.location.href = data.url;
-    } catch (err) {
-      console.log(err);
-    }
-  }
 
   const filteredRepos = repositories.filter((repo) =>
     repo.name.toLowerCase().includes(search.toLowerCase()),
   );
+  const importedRepositories = filteredRepos.filter((repo) =>
+    importedRepos.some((r) => r.github_repo_id === repo.id),
+  );
 
+  const availableRepositories = filteredRepos.filter(
+    (repo) => !importedRepos.some((r) => r.github_repo_id === repo.id),
+  );
   return (
     <AppShell>
       <div className="space-y-8">
@@ -92,16 +91,33 @@ export default function RepositoriesPage() {
         </div>
 
         {/* Grid */}
+        <>
+          {/* Imported */}
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-white">
+              Imported Repositories
+            </h2>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-7">
-          {filteredRepos.map((repo) => (
-            <RepositoryCard
-              key={repo.id}
-              repo={repo}
-              imported={importedRepos.some((r) => r.github_repo_id === repo.id)}
-            />
-          ))}
-        </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-7">
+              {importedRepositories.map((repo) => (
+                <RepositoryCard key={repo.id} repo={repo} imported={true} />
+              ))}
+            </div>
+          </div>
+
+          {/* Available */}
+          <div className="space-y-6 mt-14">
+            <h2 className="text-2xl font-bold text-white">
+              Available on GitHub
+            </h2>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-7">
+              {availableRepositories.map((repo) => (
+                <RepositoryCard key={repo.id} repo={repo} imported={false} />
+              ))}
+            </div>
+          </div>
+        </>
       </div>
     </AppShell>
   );

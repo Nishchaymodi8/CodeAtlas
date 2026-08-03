@@ -5,23 +5,36 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.permissions import AllowAny
-from django.shortcuts import get_object_or_404
-from django.shortcuts import redirect
+from django.shortcuts import get_object_or_404,redirect
+
 import requests
 
 from .models import GitHubAccount,OAuthState
 
 class GitHubConnectView(APIView):
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        print("=" * 50)
+        print("===== GitHubConnectView reached =====")
         print("USER:", request.user)
         print("AUTH:", request.auth)
-        print("HEADER:", request.headers.get("Authorization"))
-        print("=" * 50)
 
-        return Response({"ok": True})
+        OAuthState.objects.filter(user=request.user).delete()
+
+        oauth_state = OAuthState.objects.create(
+            user=request.user
+        )
+
+        github_url = (
+            "https://github.com/login/oauth/authorize"
+            f"?client_id={settings.GITHUB_CLIENT_ID}"
+            f"&state={oauth_state.state}"
+        )
+
+        return Response({
+            "url": github_url
+        })
     
 class GitHubCallbackView(APIView):
     permission_classes = [AllowAny]
@@ -76,7 +89,7 @@ class GitHubCallbackView(APIView):
         )
         oauth_state.delete()
 
-        return redirect("http://localhost:3000/dashboard?github=connected")
+        return redirect("http://localhost:3000/repositories")
 
 
 class GitHubRepositoriesView(APIView):
@@ -115,18 +128,21 @@ class GitHubRepositoriesView(APIView):
         return Response(repositories)
     
 class GitHubStatusView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        print("================================")
-        print("USER:", request.user)
-        print("AUTH:", request.auth)
-        print("HEADERS:", request.headers.get("Authorization"))
-        print("================================")
+        connected = GitHubAccount.objects.filter(
+            user=request.user
+        ).exists()
+
+        github_username = None
+
+        if connected:
+            github_username = GitHubAccount.objects.get(
+                user=request.user
+            ).username
 
         return Response({
-            "user": str(request.user),
-            "authenticated": request.user.is_authenticated,
+            "connected": connected,
+            "username": github_username,
         })
-
-  

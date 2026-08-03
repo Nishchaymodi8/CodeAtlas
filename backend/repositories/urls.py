@@ -7,4 +7,20 @@ urlpatterns = [
         "",
         RepositoryListView.as_view()
     ),
+    path(
+    "<str:repo_name>/",
+    RepositoryDetailView.as_view(),
+),
+path(
+    "<str:repo_name>/clone/",
+    CloneRepositoryView.as_view(),
+),
+path(
+    "<str:repo_name>/files/",
+    RepositoryFilesView.as_view(),
+),
+path(
+    "<str:repo_name>/file/",
+    RepositoryFileContentView.as_view(),
+),
 ]
