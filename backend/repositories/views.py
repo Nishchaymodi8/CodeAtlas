@@ -9,6 +9,39 @@ from .models import Repository
 import os
 from git import Repo
 
+
+TEXT_EXTENSIONS = {
+    ".py",
+    ".js",
+    ".jsx",
+    ".ts",
+    ".tsx",
+    ".html",
+    ".css",
+    ".scss",
+    ".json",
+    ".md",
+    ".txt",
+    ".env",
+    ".gitignore",
+    ".yml",
+    ".yaml",
+    ".xml",
+    ".sql",
+    ".sh",
+    ".bat",
+    ".ini",
+    ".cfg",
+}
+TEXT_FILES = {
+    "Procfile",
+    "Dockerfile",
+    "LICENSE",
+    "README",
+    ".gitignore",
+    ".dockerignore",
+}
+
 class ImportRepositoryView(APIView):
     
 
@@ -169,7 +202,6 @@ class CloneRepositoryView(APIView):
             "local_path": clone_path
         })
 
-
 class RepositoryFilesView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -185,15 +217,44 @@ class RepositoryFilesView(APIView):
                 status=400
             )
 
+        # Folder to browse
+        path = request.GET.get("path", "")
+
+        current_path = os.path.join(repo.local_path, path)
+
+        if not os.path.exists(current_path):
+            return Response(
+                {"error": "Folder not found"},
+                status=404
+            )
+
         items = []
 
-        for item in os.listdir(repo.local_path):
-            full_path = os.path.join(repo.local_path, item)
+        for item in os.listdir(current_path):
+
+            if item.startswith("."):
+                continue
+
+            if item == "__pycache__":
+                continue
+
+            if item.endswith(".pyc"):
+                continue
+
+            full_path = os.path.join(current_path, item)
+
+            relative_path = os.path.relpath(
+                full_path,
+                repo.local_path
+            ).replace("\\", "/")
 
             items.append({
                 "name": item,
+                "path": relative_path,
                 "type": "directory" if os.path.isdir(full_path) else "file",
             })
+
+        items.sort(key=lambda x: (x["type"] == "file", x["name"].lower()))
 
         return Response(items)
 
@@ -201,6 +262,7 @@ class RepositoryFileContentView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, repo_name):
+
         repo = Repository.objects.get(
             user=request.user,
             name=repo_name
@@ -232,12 +294,23 @@ class RepositoryFileContentView(APIView):
             with open(full_path, "r", encoding="utf-8") as f:
                 content = f.read()
 
-            return Response({
-                "path": path,
-                "content": content
-            })
-
         except UnicodeDecodeError:
-            return Response({
-                "error": "Binary file"
-            }, status=400)
+            return Response(
+                {
+                    "error": "Binary file cannot be displayed."
+                },
+                status=400,
+            )
+
+        except Exception as e:
+            return Response(
+                {
+                    "error": str(e)
+                },
+                status=500,
+            )
+
+        return Response({
+            "path": path,
+            "content": content,
+        })

@@ -58,8 +58,9 @@ export const cloneRepository = async (repoName) => {
 
   return response.data;
 };
-export const getRepositoryFiles = async (repoName) => {
+export const getRepositoryFiles = async (repoName, path = "") => {
   const response = await api.get(`/repositories/${repoName}/files/`, {
+    params: { path },
     headers: {
       Authorization: `Bearer ${getToken()}`,
     },

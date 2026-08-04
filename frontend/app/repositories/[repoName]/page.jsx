@@ -65,11 +65,16 @@ export default function RepositoryDetailPage() {
     );
   }
   async function handleFileClick(file) {
-    if (file.type === "directory") return;
+    if (file.type === "directory") {
+      const data = await getRepositoryFiles(repo.name, file.path);
+
+      setFiles(data);
+      return;
+    }
 
     setSelectedFile(file);
 
-    const data = await getFileContent(repo.name, file.name);
+    const data = await getFileContent(repo.name, file.path);
 
     setFileContent(data.content);
   }
