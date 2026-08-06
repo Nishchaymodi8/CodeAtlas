@@ -1,7 +1,7 @@
 info:
-  name: repo
+  name: index repo
   type: http
-  seq: 1
+  seq: 7
 
 http:
   method: GET

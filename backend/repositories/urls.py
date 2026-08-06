@@ -23,4 +23,12 @@ path(
     "<str:repo_name>/file/",
     RepositoryFileContentView.as_view(),
 ),
+path(
+    "<str:repo_name>/index/",
+    IndexRepositoryView.as_view(),
+),
+path(
+    "<str:repo_name>/chunk/",
+    ChunkRepositoryView.as_view(),
+),
 ]

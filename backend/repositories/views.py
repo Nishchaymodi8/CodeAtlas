@@ -2,7 +2,11 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from .models import Repository, RepositoryFile, CodeChunk
 import requests
+
+
 
 from github_integration.models import GitHubAccount
 from .models import Repository
@@ -256,7 +260,12 @@ class RepositoryFilesView(APIView):
 
         items.sort(key=lambda x: (x["type"] == "file", x["name"].lower()))
 
-        return Response(items)
+        tree = build_file_tree(
+            repo.local_path,
+            repo.local_path
+        )
+
+        return Response(tree)
 
 class RepositoryFileContentView(APIView):
     permission_classes = [IsAuthenticated]
@@ -313,4 +322,196 @@ class RepositoryFileContentView(APIView):
         return Response({
             "path": path,
             "content": content,
+        })
+
+IGNORE_NAMES = {
+    ".git",
+    "__pycache__",
+    ".idea",
+    ".vscode",
+    "node_modules",
+}
+
+def build_file_tree(root_path, current_path):
+    items = []
+
+    for name in sorted(os.listdir(current_path)):
+        if name in IGNORE_NAMES or name.endswith(".pyc"):
+            continue
+
+        full_path = os.path.join(current_path, name)
+
+        node = {
+            "name": name,
+            "path": os.path.relpath(full_path, root_path).replace("\\", "/"),
+            "type": "directory" if os.path.isdir(full_path) else "file",
+        }
+
+        if os.path.isdir(full_path):
+            node["children"] = build_file_tree(root_path, full_path)
+
+        items.append(node)
+
+    return items
+
+
+class IndexRepositoryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, repo_name):
+
+        repo = Repository.objects.get(
+            user=request.user,
+            name=repo_name
+        )
+
+        if not repo.local_path:
+            return Response(
+                {"error": "Repository not cloned"},
+                status=400
+            )
+
+        # Remove previous index
+        RepositoryFile.objects.filter(
+            repository=repo
+        ).delete()
+
+        language_map = {
+            ".py": "Python",
+            ".js": "JavaScript",
+            ".jsx": "JavaScript",
+            ".ts": "TypeScript",
+            ".tsx": "TypeScript",
+            ".html": "HTML",
+            ".css": "CSS",
+            ".json": "JSON",
+            ".md": "Markdown",
+            ".sql": "SQL",
+            ".java": "Java",
+            ".cpp": "C++",
+            ".c": "C",
+        }
+
+        ignored = {
+            ".git",
+            "__pycache__",
+            "node_modules",
+            ".idea",
+            ".vscode",
+        }
+
+        count = 0
+
+        for root, dirs, files in os.walk(repo.local_path):
+
+            dirs[:] = [d for d in dirs if d not in ignored]
+
+            for file in files:
+
+                if file.endswith(".pyc"):
+                    continue
+
+                full_path = os.path.join(root, file)
+
+                relative_path = os.path.relpath(
+                    full_path,
+                    repo.local_path
+                ).replace("\\", "/")
+
+                extension = os.path.splitext(file)[1].lower()
+
+                RepositoryFile.objects.create(
+                    repository=repo,
+                    path=relative_path,
+                    name=file,
+                    extension=extension,
+                    language=language_map.get(
+                        extension,
+                        "Unknown"
+                    ),
+                    size=os.path.getsize(full_path),
+                    last_modified=timezone.make_aware(
+                        timezone.datetime.fromtimestamp(
+                            os.path.getmtime(full_path)
+                        )
+                    ),
+                )
+
+                count += 1
+
+        return Response({
+            "message": "Repository indexed successfully",
+            "files_indexed": count,
+        })
+
+
+class ChunkRepositoryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, repo_name):
+
+        repo = Repository.objects.get(
+            user=request.user,
+            name=repo_name
+        )
+
+        # Remove old chunks
+        CodeChunk.objects.filter(
+            repository_file__repository=repo
+        ).delete()
+
+        chunk_size = 100
+
+        total_chunks = 0
+
+        for file in RepositoryFile.objects.filter(repository=repo):
+
+            full_path = os.path.join(
+                repo.local_path,
+                file.path
+            )
+
+            try:
+                with open(
+                    full_path,
+                    "r",
+                    encoding="utf-8"
+                ) as f:
+
+                    lines = f.readlines()
+
+            except:
+                continue
+
+            chunk_index = 0
+
+            for start in range(
+                0,
+                len(lines),
+                chunk_size
+            ):
+
+                end = min(
+                    start + chunk_size,
+                    len(lines)
+                )
+
+                content = "".join(
+                    lines[start:end]
+                )
+
+                CodeChunk.objects.create(
+                    repository_file=file,
+                    chunk_index=chunk_index,
+                    start_line=start + 1,
+                    end_line=end,
+                    content=content,
+                )
+
+                chunk_index += 1
+                total_chunks += 1
+
+        return Response({
+            "message": "Repository chunked successfully",
+            "chunks_created": total_chunks,
         })

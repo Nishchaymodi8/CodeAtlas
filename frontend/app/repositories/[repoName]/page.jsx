@@ -9,10 +9,37 @@ import {
   getRepositoryFiles,
   getFileContent,
 } from "@/services/repositoryService";
+function getLanguage(filename) {
+  const ext = filename.split(".").pop();
 
+  const map = {
+    py: "python",
+    js: "javascript",
+    jsx: "javascript",
+    ts: "typescript",
+    tsx: "typescript",
+    html: "html",
+    css: "css",
+    json: "json",
+    md: "markdown",
+    java: "java",
+    cpp: "cpp",
+    c: "c",
+    cs: "csharp",
+    go: "go",
+    rs: "rust",
+    php: "php",
+    sql: "sql",
+    yml: "yaml",
+    yaml: "yaml",
+  };
+
+  return map[ext] || "plaintext";
+}
 import FileExplorer from "@/components/repositories/FileExplorer";
 import CodeViewer from "@/components/repositories/CodeViewer";
-
+import FileTree from "@/components/repositories/FileTree";
+import CodeEditor from "@/components/repositories/CodeEditor";
 export default function RepositoryDetailPage() {
   const params = useParams();
   const [cloning, setCloning] = useState(false);
@@ -20,6 +47,7 @@ export default function RepositoryDetailPage() {
   const [files, setFiles] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileContent, setFileContent] = useState("");
+  const [selectedLanguage, setSelectedLanguage] = useState("plaintext");
 
   const [repo, setRepo] = useState(null);
 
@@ -65,16 +93,11 @@ export default function RepositoryDetailPage() {
     );
   }
   async function handleFileClick(file) {
-    if (file.type === "directory") {
-      const data = await getRepositoryFiles(repo.name, file.path);
-
-      setFiles(data);
-      return;
-    }
-
     setSelectedFile(file);
 
     const data = await getFileContent(repo.name, file.path);
+
+    setSelectedLanguage(getLanguage(file.name));
 
     setFileContent(data.content);
   }
@@ -143,14 +166,10 @@ export default function RepositoryDetailPage() {
             {cloning ? "Cloning..." : cloned ? "Cloned ✓" : "Clone Repository"}
           </button>
           <div className="grid grid-cols-3 gap-6 mt-10">
-            <FileExplorer
-              files={files}
-              selectedFile={selectedFile}
-              onSelectFile={handleFileClick}
-            />
+            <FileTree nodes={files} onSelectFile={handleFileClick} />
 
             <div className="col-span-2">
-              <CodeViewer content={fileContent} />
+              <CodeEditor content={fileContent} language={selectedLanguage} />
             </div>
           </div>
         </div>
