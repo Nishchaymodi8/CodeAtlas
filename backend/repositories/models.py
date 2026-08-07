@@ -1,7 +1,7 @@
 from django.db import models
 from django.conf import settings
 import os
-
+from pgvector.django import VectorField
 
 class Repository(models.Model):
 
@@ -96,3 +96,22 @@ class CodeChunk(models.Model):
             f"{self.repository_file.path}"
             f" [{self.start_line}-{self.end_line}]"
         )
+
+class CodeEmbedding(models.Model):
+    code_chunk = models.OneToOneField(
+        CodeChunk,
+        on_delete=models.CASCADE,
+        related_name="embedding"
+    )
+
+    embedding = VectorField(dimensions=768)
+
+    model_name = models.CharField(
+        max_length=100,
+        default="text-embedding-3-small"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Embedding {self.code_chunk.id}"
